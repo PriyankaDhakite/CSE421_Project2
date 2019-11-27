@@ -19,14 +19,14 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
-typedef struct user_input {
+struct user_input {
     char *file_name;
     char **argv;
     int argc;
 };
 
 static thread_func start_process NO_RETURN;
-static bool load (const struct user_input *ui, void (**eip) (void), void **esp);
+static bool load (struct user_input *ui, void (**eip) (void), void **esp);
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -57,7 +57,7 @@ process_execute (const char *file_name)
     
   struct user_input ui;
 
-  while(token = strtok_r(more, " ", &more)) {
+  while((token = strtok_r(more, " ", &more))) {
     if (argc == 0) {
         ui.file_name = token;
     }
@@ -67,7 +67,7 @@ process_execute (const char *file_name)
     
   ui.argv = argv;
   ui.argc = argc;
-
+  printf("%s\n", ui.file_name);
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (ui.file_name, PRI_DEFAULT, start_process, &ui);
   if (tid == TID_ERROR)
@@ -118,6 +118,7 @@ start_process (void *ui_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
+  while(true){}
   return -1;
 }
 
@@ -235,8 +236,8 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
    Stores the executable's entry point into *EIP
    and its initial stack pointer into *ESP.
    Returns true if successful, false otherwise. */
-bool
-load (const struct user_input *ui, void (**eip) (void), void **esp) 
+static bool
+load (struct user_input *ui, void (**eip) (void), void **esp) 
 {
   struct thread *t = thread_current ();
   struct Elf32_Ehdr ehdr;
@@ -467,18 +468,20 @@ setup_stack (void **esp, struct user_input *ui)
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
       if (success)
-        *esp = PHYS_BASE;
+        *esp = PHYS_BASE - 12;
       else
         palloc_free_page (kpage);
     }
 
-  for (int i = ui->argc; i >= 0; i--) {
+/*  for (int i = ui->argc; i >= 0; i--) {
     *esp -= strlen(ui->argv[i]) + 1;
     memcpy(*esp, ui->argv[i], strlen(ui->argv[i] + 1));
   }
 
+  int empty = 0;
+
   *esp -= sizeof(int);
-  memcpy(*esp, 0, sizeof(int));
+  memcpy(*esp, &empty, sizeof(int));
 
   int size = sizeof(&ui->argv[0]);
 
@@ -491,11 +494,11 @@ setup_stack (void **esp, struct user_input *ui)
   memcpy(*esp, &ui->argv, size);
 
   *esp -= sizeof(int);
-  memcpy(*esp, ui->argc, sizeof(int));
+  memcpy(*esp, &ui->argc, sizeof(int));
 
-  *esp-= sizeof(int);
-  memcpy(*esp, 0, sizeof(int));
-
+  *esp -= sizeof(int);
+  memcpy(*esp, &empty, sizeof(int));
+*/
   return success;
 }
 
