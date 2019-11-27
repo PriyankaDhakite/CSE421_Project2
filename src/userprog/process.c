@@ -1,3 +1,4 @@
+
 #include "userprog/process.h"
 #include <debug.h>
 #include <inttypes.h>
@@ -47,7 +48,7 @@ process_execute (const char *file_name)
   char file_name_literal[4096];
     
   memset(file_name_literal, 0, sizeof file_name_literal);
-  strncpy(file_name_literal, fn_copy, sizeof file_name_literal - 1);
+  strlcpy(file_name_literal, fn_copy, sizeof file_name_literal - 1);
     
   char *token;
   char *more = file_name_literal;
@@ -91,7 +92,7 @@ start_process (void *ui_)
   success = load (ui, &if_.eip, &if_.esp);
 
   /* If load failed, quit. */
-  palloc_free_page (file_name);
+  palloc_free_page (ui->file_name);
   if (!success) 
     thread_exit ();
 
@@ -473,13 +474,13 @@ setup_stack (void **esp, struct user_input *ui)
 
   for (int i = ui->argc; i >= 0; i--) {
     *esp -= strlen(ui->argv[i]) + 1;
-    memcpy(*esp, ui->argv[i], strlen(ui->argv[i] + 1);
+    memcpy(*esp, ui->argv[i], strlen(ui->argv[i] + 1));
   }
 
   *esp -= sizeof(int);
   memcpy(*esp, 0, sizeof(int));
 
-  size = sizeof(&ui->argv[0]);
+  int size = sizeof(&ui->argv[0]);
 
   for (int i = ui->argc; i >= 0; i--) {
     *esp -= size;
