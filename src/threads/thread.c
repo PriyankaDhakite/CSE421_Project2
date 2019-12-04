@@ -182,6 +182,9 @@ thread_create (const char *name, int priority,
   /* Initialize thread. */
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
+  t->exit_code = -1;
+  t->parent = thread_tid();
+  sema_init(&t->wait, 0);
 
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
@@ -287,6 +290,7 @@ thread_exit (void)
 #endif
 
   printf("%s: exit(%d)\n", thread_current()->name, thread_current()->exit_code);
+  sema_up(&thread_current()->wait);
 
   /* Remove thread from all threads list, set our status to dying,
      and schedule another process.  That process will destroy us
@@ -331,6 +335,24 @@ thread_foreach (thread_action_func *func, void *aux)
       struct thread *t = list_entry (e, struct thread, allelem);
       func (t, aux);
     }
+}
+
+struct thread *
+thread_get (tid_t child_tid)
+{
+  struct thread *t = NULL;
+
+  struct list_elem *e;
+
+  for (e = list_begin (&all_list); e != list_end (&all_list);
+       e = list_next (e))
+    {
+      t = list_entry (e, struct thread, allelem);
+      if (t->tid == child_tid) {
+        return t;
+      }
+    }
+  return t;
 }
 
 /* Sets the current thread's priority to NEW_PRIORITY. */

@@ -1,6 +1,7 @@
 #ifndef THREADS_THREAD_H
 #define THREADS_THREAD_H
 
+#include "synch.h"
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
@@ -90,6 +91,8 @@ struct thread
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
     int exit_code;
+    tid_t parent;
+    struct semaphore wait;
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
@@ -129,6 +132,7 @@ void thread_yield (void);
 
 /* Performs some operation on thread t, given auxiliary data AUX. */
 typedef void thread_action_func (struct thread *t, void *aux);
+struct thread * thread_get (tid_t child_tid);
 void thread_foreach (thread_action_func *, void *);
 
 int thread_get_priority (void);

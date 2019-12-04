@@ -92,15 +92,25 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  while(thread_current()->tid == child_tid){}
-  printf("Made it past while loop");
-  return -1;
+
+  struct thread *child = thread_get(child_tid);
+
+  if (child == NULL || child->parent != thread_tid()) {
+    return -1;
+  }
+
+  child->parent = 0;
+
+  sema_down(&child->wait);
+
+  return child->exit_code;
 }
 
 /* Free the current process's resources. */
 void
 process_exit (void)
 {
+
   struct thread *cur = thread_current ();
   uint32_t *pd;
 
