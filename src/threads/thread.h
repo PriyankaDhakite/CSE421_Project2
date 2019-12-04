@@ -93,6 +93,8 @@ struct thread
     int exit_code;
     tid_t parent;
     struct semaphore wait;
+    int fd_count;
+    struct list fd_list;
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
@@ -104,6 +106,13 @@ struct thread
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
+  };
+
+struct fd
+  {
+    int fd_num;
+    struct file *file;
+    struct list_elem fd_elem;
   };
 
 /* If false (default), use round-robin scheduler.

@@ -17,6 +17,7 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
+#include "threads/malloc.h"
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -233,7 +234,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
-  if (t->pagedir == NULL) 
+  if (t->pagedir == NULL)
     goto done;
   process_activate ();
 
@@ -453,7 +454,7 @@ add_args (void **esp, const char *file_name)
   *esp = PHYS_BASE;
 
   int argc = 0;
-  char *argv[100];
+  char **argv = malloc(128);
   char *token;
   char *more = (char *) file_name;
 
@@ -485,6 +486,8 @@ add_args (void **esp, const char *file_name)
 
   *esp -= sizeof(void *);
   memcpy(*esp, &argv[argc], sizeof(void *));
+
+  free(argv);
 }
 
 /* Create a minimal stack by mapping a zeroed page at the top of
