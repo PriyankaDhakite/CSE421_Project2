@@ -7,6 +7,8 @@
 #include "threads/vaddr.h"
 #include "filesys/filesys.h"
 #include "threads/malloc.h"
+#include "filesys/file.h"
+
 static void syscall_handler (struct intr_frame *);
 void verify (const void *pointer, int argc);
 
@@ -26,7 +28,7 @@ syscall_handler (struct intr_frame *f UNUSED)
   switch (*(arg - 1)) {
 
     case SYS_WRITE:
-      verify(f->esp, 3);
+      verify(arg, 3);
 
       if (*arg == 1) {
         putbuf((const void *) *(arg + 1), (unsigned) *(arg + 2));
@@ -43,6 +45,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     case SYS_CREATE:
       verify(f->esp, 2);
+      verify((void *) *arg, 0);
 
       if ((const char*) *(arg) == NULL) {
         thread_current()->exit_code = -1;
@@ -53,20 +56,31 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     case SYS_OPEN:
       verify(f->esp, 1);
+      verify((void *) *arg, 0);
 
-      struct file *file_open = filesys_open((const char *) *(arg));
-      if (f == NULL) {
+      struct file *file_o = filesys_open((const char *) *(arg));
+      if (file_o == NULL) {
         f->eax = -1;
       } else {
         struct fd *new_fd = malloc(sizeof(struct fd));
         thread_current()->fd_count += 1;
         new_fd->fd_num = thread_current()->fd_count;
-        new_fd->file = file_open;
+        new_fd->file = file_o;
         list_push_back(&thread_current()->fd_list, &new_fd->fd_elem);
         f->eax = thread_current()->fd_count;
-     }
+      }
 
-    break;
+      break;
+    case SYS_CLOSE:
+      verify(f->esp, 1);
+
+      struct fd *found_fd = thread_get_file(*arg);
+      if (found_fd != NULL) {
+        file_close(found_fd->file);
+        list_remove(&found_fd->fd_elem);
+      }
+
+      break;
     default:
 
       thread_exit();

@@ -142,6 +142,7 @@ void thread_yield (void);
 /* Performs some operation on thread t, given auxiliary data AUX. */
 typedef void thread_action_func (struct thread *t, void *aux);
 struct thread * thread_get (tid_t child_tid);
+struct fd * thread_get_file (int fd);
 void thread_foreach (thread_action_func *, void *);
 
 int thread_get_priority (void);

@@ -357,6 +357,24 @@ thread_get (tid_t child_tid)
   return t;
 }
 
+struct fd *
+thread_get_file (int fd)
+{
+  struct fd *list_fd = NULL;
+
+  struct list_elem *e;
+
+  for (e = list_begin (&thread_current()->fd_list); e != list_end (&thread_current()->fd_list);
+       e = list_next (e))
+   {
+      list_fd = list_entry (e, struct fd, fd_elem);
+      if (list_fd->fd_num == fd) {
+        return list_fd;
+      }
+  }
+  return list_fd;
+}
+
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) 
