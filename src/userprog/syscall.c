@@ -6,7 +6,6 @@
 #include "userprog/pagedir.h"
 
 static void syscall_handler (struct intr_frame *);
-void write (struct intr_frame *f);
 
 void
 syscall_init (void) 
@@ -17,25 +16,30 @@ syscall_init (void)
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
-  switch (*(int *) f->esp) {
+
+  int *arg = (int *) f->esp + 1;
+
+  switch (*(arg - 1)) {
 
     case SYS_WRITE:
-      write (f);
+
+      if (*arg == 1) {
+        putbuf((const void*) *(arg + 1), (unsigned) *(arg + 2));
+        f->eax = (unsigned) *(arg + 2);
+      }
+
       break;
     case SYS_EXIT:
-      thread_exit ();
+
+      thread_current()->exit_code = *arg;
+      thread_exit();
+
       break;
     default:
-      thread_exit ();
+
+      thread_exit();
+
       break;
   }
-}
 
-void write (struct intr_frame *f)
-{
-  int *arg = (int *) f->esp + 1;
-  if (*arg == 1) {
-    putbuf((const void*)*(arg + 1), (unsigned)*(arg + 2));
-    f->eax = (unsigned) *(arg + 2);
-  }
 }

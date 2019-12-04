@@ -92,7 +92,8 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  while(true){}
+  while(thread_current()->tid == child_tid){}
+  printf("Made it past while loop");
   return -1;
 }
 
@@ -445,13 +446,12 @@ add_args (void **esp, const char *file_name)
   char *argv[100];
   char *token;
   char *more = (char *) file_name;
-  int bytes = 0;
+
   while((token = strtok_r(more, " ", &more))) {
     *esp -= strlen(token) + 1;
     memcpy(*esp, token, strlen(token) + 1);
     argv[argc] = *esp;
     argc++;
-    bytes += strlen(token) + 1;
   }
 
   argv[argc] = 0;
@@ -459,29 +459,22 @@ add_args (void **esp, const char *file_name)
   if ((int) *esp % 4 > 0) {
     *esp -= (int) *esp % 4;
     memcpy(*esp, &argv[argc], (int) *esp % 4);
-    bytes += (int) *esp % 4;
   }
 
   for (int i = argc; i >= 0; i--) {
     *esp -= sizeof(char *);
     memcpy(*esp, &argv[i], sizeof(char *));
-    bytes += sizeof(char *);
   }
 
   char *argv_address = *esp;
   *esp -= sizeof(char *);
   memcpy(*esp, &argv_address, sizeof(char *));
-  bytes += sizeof(char *);
 
   *esp -= sizeof(int);
   memcpy(*esp, &argc, sizeof(int));
-  bytes += sizeof(int);
 
   *esp -= sizeof(void *);
   memcpy(*esp, &argv[argc], sizeof(void *));
-  bytes += sizeof(void *);
-
-  hex_dump((int)*esp+bytes, *esp, bytes, 1);
 }
 
 /* Create a minimal stack by mapping a zeroed page at the top of
