@@ -28,11 +28,19 @@ syscall_handler (struct intr_frame *f UNUSED)
   switch (*(arg - 1)) {
 
     case SYS_WRITE:
-      verify(arg, 3);
+      verify(f->esp, 3);
+      verify((void *) *(arg + 1), 0);
 
       if (*arg == 1) {
         putbuf((const void *) *(arg + 1), (unsigned) *(arg + 2));
         f->eax = (unsigned) *(arg + 2);
+      } else {
+        struct fd *fd_write = thread_get_file(*arg);
+        if (fd_write == NULL) {
+          f->eax = 0;
+        } else {
+          f->eax = file_write(fd_write->file, (arg + 1), *(arg + 2));
+        }
       }
 
       break;
@@ -74,10 +82,24 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_CLOSE:
       verify(f->esp, 1);
 
-      struct fd *found_fd = thread_get_file(*arg);
-      if (found_fd != NULL) {
-        file_close(found_fd->file);
-        list_remove(&found_fd->fd_elem);
+      struct fd *fd_close = thread_get_file(*arg);
+      if (fd_close != NULL) {
+        file_close(fd_close->file);
+        list_remove(&fd_close->fd_elem);
+      }
+
+      break;
+    case SYS_READ:
+      verify(f->esp, 3);
+      verify((void *) *(arg + 1), 0);
+
+      if (*arg > 0) {
+        struct fd *fd_read = thread_get_file(*arg + 1);
+        if (fd_read == NULL) {
+          f->eax = -1;
+        } else {
+          f->eax = file_read(fd_read->file, (arg + 1), *(arg + 2));
+        }
       }
 
       break;
