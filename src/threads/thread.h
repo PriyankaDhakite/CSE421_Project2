@@ -95,6 +95,7 @@ struct thread
     struct semaphore wait;
     int fd_count;
     struct list fd_list;
+    int load;
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */

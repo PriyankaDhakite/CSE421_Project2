@@ -46,7 +46,8 @@ process_execute (const char *file_name)
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
-    palloc_free_page (fn_copy); 
+    palloc_free_page (fn_copy);
+
   return tid;
 }
 
@@ -334,8 +335,15 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   success = true;
 
+struct thread *parent = thread_get(thread_current()->parent);
+
  done:
   /* We arrive here whether the load is successful or not. */
+  if (success) {
+    parent->load = thread_current()->tid;
+  } else {
+    parent->load = -1;
+  }
   file_close (file);
   return success;
 }

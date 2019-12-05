@@ -8,6 +8,7 @@
 #include "filesys/filesys.h"
 #include "threads/malloc.h"
 #include "filesys/file.h"
+#include "userprog/process.h"
 
 static void syscall_handler (struct intr_frame *);
 void verify (const void *pointer, int argc);
@@ -89,6 +90,26 @@ syscall_handler (struct intr_frame *f UNUSED)
       }
 
       break;
+    case SYS_FILESIZE:
+      verify(f->esp, 1);
+
+      struct fd *fd_filesize = thread_get_file(*arg);
+      if (fd_filesize == NULL) {
+        f->eax = 0;
+      } else {
+        f->eax = file_length(fd_filesize->file);
+      }
+
+      break;
+    case SYS_EXEC:
+     verify(f->esp, 1);
+     verify((void *) *arg, 0);
+
+     tid_t pid = process_execute((const char *) *arg);
+     while (thread_current()->load == 0) { barrier(); }
+     f->eax = thread_current()->load;
+
+     break;
     case SYS_READ:
       verify(f->esp, 3);
       verify((void *) *(arg + 1), 0);
@@ -101,6 +122,20 @@ syscall_handler (struct intr_frame *f UNUSED)
           f->eax = file_read(fd_read->file, (arg + 1), *(arg + 2));
         }
       }
+
+      break;
+    case SYS_TELL:
+      verify(f->esp, 1);
+
+      struct fd *fd_struct;
+      struct list_elem *e;
+      int status = -1;
+      e = list_tail(&thread_current()->fd_list);
+      fd_struct = list_entry(e, struct fd, fd_elem);
+      if (fd_struct != NULL) {
+        status = file_tell(fd_struct->file);
+      }
+      f->eax = status;
 
       break;
     default:

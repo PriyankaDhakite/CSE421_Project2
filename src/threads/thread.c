@@ -187,6 +187,7 @@ thread_create (const char *name, int priority,
   sema_init(&t->wait, 0);
   list_init(&t->fd_list);
   t->fd_count = 1;
+  t->load = 0;
 
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
